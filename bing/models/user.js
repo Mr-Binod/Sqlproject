@@ -21,8 +21,8 @@ sqlpool.getConnection((err) => {
 const mysqlconnect = require('./config')
 
 
-const CreateBoardData = async (title, content) => {
-    await mysqlconnect.query(`INSERT INTO board(title, content) VALUES ('${title}', '${content}')`)
+const CreateBoardData = async (title, content, imgpath, uid) => {
+    await mysqlconnect.query(`INSERT INTO board(title, content, imgpath, boardid) VALUES ('${title}', '${content}', '${imgpath}', '${uid}')`)
 }
 
 const SelctBoardData = async () => {
@@ -38,8 +38,8 @@ const SelctBoardData = async () => {
 
 const SelectIndexData = async (id) => {
     try {
-        const [[data]] =  await mysqlconnect.query("SELECT * FROM board WHERE title=?", [id])
-        return data;
+        const [[data]] =  await mysqlconnect.query("SELECT * FROM board WHERE id=?", [id])
+        return data || null;
     } catch (error) {
         console.log("에러 발생~", error);        
     }
@@ -47,7 +47,7 @@ const SelectIndexData = async (id) => {
 
 const UpdateData = async (id, title, content) => { 
     try {
-        const [data] = await mysqlconnect.query("UPDATE board SET title=?, content=? WHERE id=?", [id, title, content])
+        const [data] = await mysqlconnect.query("UPDATE board SET title=?, content=? WHERE id=?", [ title, content, id])
         return data;
     } catch (error) {
         console.log("에러 발생~", error);
@@ -65,15 +65,15 @@ const DeleteData = async (id) => {
 
 
 // module.exports = { CreateBoardData, SelctBoardData, SelectIndexData, UpdateData, DeleteData }
-const Createuser = async () => {
-    try {
-        const [data] = await sqlpool.query('select * from user')
-        // console.log(data)
-    } catch (error) {    
-        const data = await sqlpool.query("create table user(userid varchar(15), pwd varchar(128), name varchar(15), nickname varchar(15), gender varchar(10), imgpath varchar(128))");
-    }
-}
-Createuser();
+// const Createuser = async () => {
+//     try {
+//         const [data] = await sqlpool.query('select * from user')
+//         // console.log(data)
+//     } catch (error) {    
+//         const data = await sqlpool.query("create table user(userid varchar(15), pwd varchar(128), name varchar(15), nickname varchar(15), gender varchar(10), imgpath varchar(128))");
+//     }
+// }
+// Createuser();
 
 const Insertuser = async (userid, pwd, name, nickname, gender, imgpath) => {
     try {
@@ -125,4 +125,20 @@ const Deleteuser = async (uid) => {
     }
 }
 
-module.exports = {Insertuser, Logincheck, Usercheck, Updatecontent, Deleteuser, CreateBoardData, SelctBoardData, SelectIndexData, UpdateData, DeleteData}
+const Addlike = async (uid, boardid) => {
+    try {
+        const [[checklike]] = await sqlpool.query("select * from good where goodid=? and contentid=?;", [uid, boardid])
+        if (checklike) {
+            await sqlpool.query("delete from good where goodid=? and contentid=?;", [uid, boardid])
+            return {state : 201, message : 'unliked'}
+        }
+        const data = await sqlpool.query("insert into good (goodid, contentid) values (?, ?);", [uid, boardid])
+        return {state : 200, message : 'liked'}
+
+    } catch (error) {
+        return {state : 410, message : error}
+        
+    }
+}
+
+module.exports = {Addlike, Insertuser, Logincheck, Usercheck, Updatecontent, Deleteuser, CreateBoardData, SelctBoardData, SelectIndexData, UpdateData, DeleteData}

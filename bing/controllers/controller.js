@@ -5,8 +5,8 @@ const { Insertuser, Logincheck, Usercheck, Uploadcontent, Updatecontent } = requ
 
 const {CreateBoardData , SelctBoardData, SelectIndexData, UpdateData, DeleteData} = require('../models/user');
 
-const CreateBoard =  async (title, content) => {
-    return await CreateBoardData(title, content); 
+const CreateBoard =  async (title, content, uid) => {
+    return await CreateBoardData(title, content, uid); 
 }
 
 
@@ -14,22 +14,26 @@ const GetBoard =  async () => {
     return await SelctBoardData();
 }
 
-const GetBoardIndex = async (title) => {
-    const data = await SelectIndexData(title);
+const GetBoardIndex = async (id) => {
+    const data = await SelectIndexData(id);
     return data;
 }
 
 const UpdateBoard = async (id, title, content) => {
-    const [data] = await SelctBoardData(id);
-
-    data.title= title;
-    data.content = content;
-
     try {
         await UpdateData(id, title, content);
-        console.log("게시글 수정되었디~")
+        console.log("수정된 게시글 ", id, title, content)
     } catch (error) {
         console.log("에러 발생", error);
+    }
+}
+
+const DeleteBoard = async (id) => {
+    try {
+        await DeleteData(id);
+        console.log(`게시글 id ${id} 삭제 완료`);
+    } catch (error) {
+        console.log("삭제 중 오류 발생! :", error);
     }
 }
 
@@ -78,5 +82,12 @@ const Updateinfo = async (uid, uname, nname,gender,path) => {
     }
 }
 
+const Logintoken = (req, res, next) => {
+    const data = req.headers.cookie.split('=')[1];
+    const userdata = jwt.verify(data, process.env.TKN);
+    req.user = userdata;
+    console.log(req.user, 'req')
+    next();
+}
 
 module.exports = {Createuser, Userlogin, Updateinfo, CreateBoard, GetBoardIndex, GetBoard, UpdateBoard}
